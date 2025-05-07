@@ -95,7 +95,44 @@ def value_iteration(env, gamma, max_iterations, logger):
    
 ### Please finish the code below ##############################################
 ###############################################################################
+    theta = 1e-4
+    
+    for k in range(max_iterations + 1):
+        v_new = v.copy()
+        delta = 0
+        
+        for s in range(NUM_STATES):
+            actionValues = []
+            for a in range(NUM_ACTIONS):
+                total = 0
+                for (p, s_, r, terminal) in TRANSITION_MODEL[s][a]:
+                    total += p * (r + gamma * v[s_])
+                actionValues.append(total) 
 
+            # choose the max out of all the bellman sum inside the action_value array
+            maxValue = max(actionValues)
+            v_new[s] = maxValue
+            delta = max(delta, abs(maxValue - v[s]))
+
+        v = v_new
+
+        # update policy
+        for s in range(NUM_STATES):
+            optimalAction = 0
+            optimalValue = float('-inf')
+            for a in range(NUM_ACTIONS):
+                total = 0
+                for (p, s_, r, terminal) in TRANSITION_MODEL[s][a]:
+                    total += p * (r + gamma * v[s_])
+                if total > optimalValue:
+                    optimalValue = total
+                    optimalAction = a
+            pi[s] = optimalAction
+
+        logger.log(k + 1, v, pi)
+
+        if delta < theta:
+            break
 ###############################################################################
     return pi
 
