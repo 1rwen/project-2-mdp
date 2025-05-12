@@ -183,7 +183,37 @@ def policy_iteration(env, gamma, max_iterations, logger):
 
 ### Please finish the code below ##############################################
 ###############################################################################
-
+    theta = 1e-4
+    converge = True
+    for k in range(max_iterations + 1):
+        while converge:
+            v_new = v.copy()
+            delta = 0
+            for s in range(NUM_STATES):
+                total = 0
+                for (p, s_, r, terminal) in TRANSITION_MODEL[s][pi[s]]: #transition for pi[s] action
+                    total += p * (r + gamma * v[s_])
+                v_new[s] = total 
+                delta = max(delta, abs(v_new[s] - v[s]))
+            v = v_new #do this when all states are processed
+            if delta < theta: #check to see if it converged. if so then exit
+                break
+        # policy improvement
+        policyStable = True
+        for s in range(NUM_STATES):
+            oldAction = pi[s]
+            actionValues = []
+            for a in range(NUM_ACTIONS):
+                total = 0
+                for (p, s_, r, terminal) in TRANSITION_MODEL[s][a]:
+                    total += p * (r + gamma * v[s_])
+                actionValues.append(total) #cummulating all of the actions into an array
+            pi[s] = actionValues.index(max(actionValues)) #returns the action with the highest value(best one)      
+            if oldAction != pi[s]:
+                policyStable = False
+        logger.log(k + 1, v, pi)
+        if policyStable:
+            break
 ###############################################################################
     return pi
 
@@ -217,7 +247,7 @@ def q_learning(env, gamma, max_iterations, logger):
     """
     NUM_STATES = env.observation_space.n
     NUM_ACTIONS = env.action_space.n
-    
+
     v = [0] * NUM_STATES
     pi = [0] * NUM_STATES
     # Visualize the initial value and policy
@@ -236,7 +266,32 @@ def q_learning(env, gamma, max_iterations, logger):
 
 ### Please finish the code below ##############################################
 ###############################################################################
-
+    qTable = [[0] * NUM_ACTIONS for _ in range((NUM_STATES))]
+    minEps = 0.1
+    totalSteps = 0 #stop once total steps reaches the max iteration
+    s = env.reset() #resetting s after each episode
+    while totalSteps < max_iterations:
+        while True: #in instruction max iteration represent the number of steps and not total number of episodes
+            epsilonStrink = (eps - minEps) * (totalSteps / max_iterations) #represents how much epsilon should have shrunk so far
+            epsilon = max(minEps, eps - epsilonStrink) #getting the max of linear decayed epsilon versus the minimum epsilon
+            if random.random() < epsilon: #want to always explore when epsilon is high
+                a = random.randint(0, NUM_ACTIONS-1) 
+            else: #if eps is low choose best action
+                a = qTable[s].index(max((qTable[s]))) #returns the index of the action with highest q-value based on the state
+            s_, r, terminal, info = env.step(a)
+            if terminal == True:
+                target = r
+            else:
+                target = r + gamma * max(qTable[s_]) #gets max q-value for all possible actions in the next state s_
+            qTable[s][a] = (1 - alpha) * qTable[s][a] + alpha * target
+            s = s_
+            totalSteps += 1
+            v = [max(qTable[s]) for s in range(NUM_STATES)] #look through all states and return max Q-value among all the actions
+            pi = [qTable[s].index(max((qTable[s]))) for s in range(NUM_STATES)] #look through all states and return index/action with highest Q-value
+            logger.log(totalSteps, v, pi) #records iteration process
+            if terminal or totalSteps >= max_iterations:
+                break   # Just break. Reset comes outside inner while loop.
+        s = env.reset()
 ###############################################################################
     return pi
 
