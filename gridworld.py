@@ -109,9 +109,11 @@ def value_iteration(env, gamma, max_iterations, logger):
                     total += p * (r + gamma * v[s_])
                 actionValues.append(total) 
 
+
             # choose the max out of all the bellman sum inside the action_value array
             maxValue = max(actionValues)
             v_new[s] = maxValue
+
             delta = max(delta, abs(maxValue - v[s]))
 
         v = v_new
@@ -130,8 +132,8 @@ def value_iteration(env, gamma, max_iterations, logger):
             pi[s] = optimalAction
 
         logger.log(k + 1, v, pi)
-
-        if delta < theta:
+        # bellman update/back-up
+        if delta < theta: 
             break
 ###############################################################################
     return pi
