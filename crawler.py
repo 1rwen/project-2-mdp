@@ -80,10 +80,37 @@ def q_learning(env, logger):
 
 ### Please finish the code below ##############################################
 ###############################################################################
-
+    v = [0] * NUM_STATES
+    pi = [0] * NUM_STATES
+    logger.log(0, v, pi)
+    qTable = [[0] * NUM_ACTIONS for _ in range((NUM_STATES))]
+    minEps = 0.1
+    totalSteps = 0 #stop once total steps reaches the max iteration
+    epsilon = 1
+    decay = (eps - minEps) / max_iterations
+    s = env.reset() #resetting s after each episode
+    while totalSteps < max_iterations:
+        terminal = False
+        while not terminal and totalSteps < max_iterations: 
+            if random.random() < epsilon: #want to always explore when epsilon is high
+                a = random.randint(0, NUM_ACTIONS-1) 
+            else: #if eps is low choose best action
+                a = qTable[s].index(max((qTable[s]))) #returns the index of the action with highest q-value based on the state
+            s_, r, terminal, info = env.step(a)
+            if terminal == True:
+                target = r
+            else:
+                target = r + gamma * max(qTable[s_]) #gets max q-value for all possible actions in the next state s_
+            qTable[s][a] = (1 - alpha) * qTable[s][a] + alpha * target
+            s = s_
+            totalSteps += 1
+            epsilon = max(minEps, eps - decay * totalSteps) #getting the max of linear decayed epsilon versus the minimum epsilon
+            v = [max(qTable[s]) for s in range(NUM_STATES)]
+            pi = [qTable[s].index(max(qTable[s])) for s in range(NUM_STATES)]
+            logger.log(totalSteps+1, v, pi)
+        s = env.reset()
 ###############################################################################
-    return None
-
+    return pi
 
 if __name__ == "__main__":
     from app.crawler import App

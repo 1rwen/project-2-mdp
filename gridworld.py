@@ -269,11 +269,11 @@ def q_learning(env, gamma, max_iterations, logger):
     qTable = [[0] * NUM_ACTIONS for _ in range((NUM_STATES))]
     minEps = 0.1
     totalSteps = 0 #stop once total steps reaches the max iteration
+    epsilon = 1
+    decay = (eps - minEps) / max_iterations
     s = env.reset() #resetting s after each episode
     while totalSteps < max_iterations:
         while True: #in instruction max iteration represent the number of steps and not total number of episodes
-            epsilonStrink = (eps - minEps) * (totalSteps / max_iterations) #represents how much epsilon should have shrunk so far
-            epsilon = max(minEps, eps - epsilonStrink) #getting the max of linear decayed epsilon versus the minimum epsilon
             if random.random() < epsilon: #want to always explore when epsilon is high
                 a = random.randint(0, NUM_ACTIONS-1) 
             else: #if eps is low choose best action
@@ -284,13 +284,14 @@ def q_learning(env, gamma, max_iterations, logger):
             else:
                 target = r + gamma * max(qTable[s_]) #gets max q-value for all possible actions in the next state s_
             qTable[s][a] = (1 - alpha) * qTable[s][a] + alpha * target
-            s = s_
-            totalSteps += 1
-            v = [max(qTable[s]) for s in range(NUM_STATES)] #look through all states and return max Q-value among all the actions
-            pi = [qTable[s].index(max((qTable[s]))) for s in range(NUM_STATES)] #look through all states and return index/action with highest Q-value
-            logger.log(totalSteps, v, pi) #records iteration process
             if terminal or totalSteps >= max_iterations:
                 break   # Just break. Reset comes outside inner while loop.
+            s = s_
+            v = [max(qTable[s]) for s in range(NUM_STATES)] #look through all states and return max Q-value among all the actions
+            pi = [qTable[s].index(max((qTable[s]))) for s in range(NUM_STATES)] #look through all states and return index/action with highest Q-value
+            totalSteps += 1
+            logger.log(totalSteps + 1, v, pi) #records iteration process
+        epsilon = max(minEps, eps - decay * totalSteps) #getting the max of linear decayed epsilon versus the minimum epsilon
         s = env.reset()
 ###############################################################################
     return pi
@@ -327,3 +328,6 @@ if __name__ == "__main__":
     root = tk.Tk()
     App(algs, worlds, root)
     tk.mainloop()
+
+    #epsilonShrink = (eps - minEps) * (totalSteps / max_iterations) #represents how much epsilon should have shrunk so far
+        #epsilon = max(minEps, eps - epsilonShrink) #getting the max of linear decayed epsilon versus the minimum epsilon
