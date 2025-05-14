@@ -330,6 +330,3 @@ if __name__ == "__main__":
     root = tk.Tk()
     App(algs, worlds, root)
     tk.mainloop()
-
-    #epsilonShrink = (eps - minEps) * (totalSteps / max_iterations) #represents how much epsilon should have shrunk so far
-        #epsilon = max(minEps, eps - epsilonShrink) #getting the max of linear decayed epsilon versus the minimum epsilon
